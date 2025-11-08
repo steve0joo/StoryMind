@@ -9,9 +9,19 @@ Save ~1.5 hours compared to building manual PDF/EPUB parsers
 
 import os
 from typing import List, Dict
-from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
+
+# Try to import PDF loaders in order of preference
+try:
+    from langchain_community.document_loaders import PyPDFLoader
+    PDF_LOADER = "PyPDF"
+except ImportError:
+    try:
+        from langchain_community.document_loaders import UnstructuredPDFLoader
+        PDF_LOADER = "Unstructured"
+    except ImportError:
+        PDF_LOADER = None
 
 # EPUB loader might not be available in all versions
 try:
@@ -55,7 +65,14 @@ def process_book(file_path: str, chunk_size: int = 1000, chunk_overlap: int = 20
     file_ext = os.path.splitext(file_path)[1].lower()
 
     if file_ext == '.pdf':
-        loader = UnstructuredPDFLoader(file_path)
+        if PDF_LOADER == "PyPDF":
+            from langchain_community.document_loaders import PyPDFLoader
+            loader = PyPDFLoader(file_path)
+        elif PDF_LOADER == "Unstructured":
+            from langchain_community.document_loaders import UnstructuredPDFLoader
+            loader = UnstructuredPDFLoader(file_path)
+        else:
+            raise ValueError("No PDF loader available. Install: pip install pypdf")
     elif file_ext == '.epub':
         if UnstructuredEPUBLoader is None:
             raise ValueError("EPUB support not available. Install with: pip install unstructured[epub]")

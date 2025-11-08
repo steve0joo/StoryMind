@@ -79,25 +79,30 @@ class CharacterExtractor:
         """
         print(f"\nExtracting character names from text ({len(book_text):,} characters)...")
 
-        # Create prompt template
+        # Create prompt template with improved instructions
         prompt_template = PromptTemplate(
             input_variables=["text", "max_chars"],
-            template="""You are a literary analysis expert. Extract the main character names from this book text.
+            template="""You are an expert literary analyst specializing in character identification. Your task is to extract the main character names from this book text.
 
-IMPORTANT:
-- Extract FULL NAMES (first and last name) when available
-- Include ONLY main characters (not minor/background characters)
-- Maximum {max_chars} characters
-- Return as a JSON array of strings
-- Use the exact names as they appear in the text
+EXTRACTION RULES:
+1. Extract FULL NAMES (e.g., "Harry Potter" not just "Harry")
+2. Include titles/honorifics if they're part of the character's identity (e.g., "Professor Dumbledore", "Lady Macbeth")
+3. ONLY include MAIN and SIGNIFICANT SECONDARY characters (not background/minor characters)
+4. Characters mentioned multiple times or central to plot are main characters
+5. Exclude generic references (e.g., "the man", "a woman", "the child")
+6. Maximum {max_chars} characters total
+7. Use exact names as they appear in the text (preserve spelling and capitalization)
 
-Text:
+Text excerpt:
 {text}
 
-Return ONLY a valid JSON array, nothing else. Example format:
-["Character One", "Character Two", "Character Three"]
+OUTPUT FORMAT:
+Return ONLY a valid JSON array of character name strings. No explanations, no markdown, just the JSON array.
 
-JSON array of character names:"""
+Example of correct output format:
+["Elizabeth Bennet", "Mr. Darcy", "Jane Bennet"]
+
+JSON array of main character names:"""
         )
 
         # Format the prompt
@@ -189,22 +194,32 @@ JSON array of character names:"""
 
         synthesis_prompt = PromptTemplate(
             input_variables=["character_name", "context"],
-            template="""You are a literary analyst. Create a comprehensive character description.
+            template="""You are an expert literary analyst. Create a canonical character description for image generation.
 
-Character: {character_name}
+Character Name: {character_name}
 
-Text mentions:
+Text Excerpts:
 {context}
 
-Create a canonical description that:
-- Summarize physical appearance (if mentioned)
-- Describe personality traits and motivations
-- Note key relationships and roles
-- Use present tense ("is", not "was")
-- Is 3-5 sentences long
-- Is accurate to the text (no speculation)
+DESCRIPTION REQUIREMENTS:
+1. Physical Appearance: Include ALL physical details mentioned (hair color, eye color, build, height, distinctive features, clothing style)
+2. Age/Demographics: Include approximate age, gender, ethnicity if mentioned
+3. Personality: Key personality traits evident from the text
+4. Role: Their role/occupation in the story
+5. Distinctive Features: Any unique characteristics that make them visually distinctive
 
-Canonical description:"""
+STYLE GUIDELINES:
+- Write in present tense ("is", "has", "wears" not "was", "had", "wore")
+- Be specific and concrete (good: "has long black hair", bad: "is attractive")
+- 4-6 sentences recommended
+- Prioritize visual details that will help with image generation
+- Base ONLY on evidence from the text excerpts (no speculation or assumptions)
+- Avoid vague terms like "beautiful", "handsome" - describe specific features instead
+
+IMPORTANT FOR IMAGE GENERATION:
+Focus on physical, visual characteristics that an AI image generator can render. Psychological traits should be mentioned only if they manifest physically (e.g., "appears confident" is better than "is confident").
+
+Canonical visual description:"""
         )
 
         prompt = synthesis_prompt.format(character_name=character_name, context=context[:10000])  # Limit context

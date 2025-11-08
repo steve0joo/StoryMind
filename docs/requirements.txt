@@ -1,5 +1,6 @@
 # StoryMind Backend Dependencies
 # Python 3.10+ required
+# Updated: November 8, 2025
 
 # Core Framework
 flask==3.0.3
@@ -26,3 +27,6 @@ python-dotenv==1.0.1
 pydantic==2.10.3
 numpy==2.1.3
 requests==2.32.3
+
+# Optional (Post-Hackathon Only)
+# google-cloud-storage==2.18.2  # For production file storage

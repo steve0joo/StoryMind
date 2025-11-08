@@ -1,0 +1,57 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.log
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Environment
+.env
+.env.local
+backend/.env
+
+# Data files
+data/uploads/*.pdf
+data/uploads/*.epub
+data/faiss_indices/*.bin
+*.pdf
+*.epub
+
+# Backend static uploads
+backend/static/uploads/books/*
+backend/static/uploads/images/*
+!backend/static/uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+#CLAUDE
+docs/*.md
+CLAUDE.md

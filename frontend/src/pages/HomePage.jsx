@@ -134,7 +134,7 @@ function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">AI-Powered</h3>
               <p className="text-gray-600">
-                Powered by Gemini 2.0 and Imagen 3 for high-fidelity generation
+                Powered by Gemini 2.5 & Imagen 3 for high-fidelity generation
               </p>
             </div>
           </div>

@@ -57,6 +57,7 @@ docs/*.md
 CLAUDE.md
 test_harry_potter.py
 test_ml_pipeline.py
+backend/verify_permissions.py
 
 # Key files
 /backend/*.json

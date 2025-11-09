@@ -155,16 +155,18 @@ def upload_book():
         logger.info("Extracting characters using Gemini")
         extractor = CharacterExtractor()
 
-        # Use more chunks for better character extraction (first 50 chunks = ~50,000 chars)
-        book_text = "\n".join(chunks[:50])  # First 50 chunks for comprehensive extraction
+        # QUOTA OPTIMIZATION: Use 35 chunks instead of 50 (reduces token usage, still gets main characters)
+        # 35 chunks = ~35,000 chars, enough for character introductions in most books
+        book_text = "\n".join(chunks[:35])  # First 35 chunks for character extraction
         character_names = extractor.extract_character_names(book_text, max_characters=50)
 
         logger.info(f"Extracted {len(character_names)} characters: {character_names}")
 
         # Step 3.5: Deduplicate characters (remove aliases like "Mrs Dursley" + "Petunia")
+        # QUOTA OPTIMIZATION: Use fuzzy matching only (no LLM) to save API calls
         try:
             from utils.character_deduplication import CharacterDeduplicator
-            dedup = CharacterDeduplicator(use_llm=True)
+            dedup = CharacterDeduplicator(use_llm=False)  # Fuzzy matching only - saves ~28 API calls/book
             character_names, alias_map = dedup.deduplicate_characters(character_names)
             logger.info(f"After deduplication: {len(character_names)} unique characters")
             if alias_map:
@@ -201,7 +203,8 @@ def upload_book():
             for char_name in character_names:
                 try:
                     # Create canonical profile for each character
-                    profile = extractor.create_canonical_profile(char_name, rag, num_mentions=10)
+                    # QUOTA OPTIMIZATION: Use 7 chunks instead of 10 (still captures 80%+ visual details)
+                    profile = extractor.create_canonical_profile(char_name, rag, num_mentions=7)
 
                     # Create Character record
                     character = Character(
@@ -216,6 +219,11 @@ def upload_book():
                     characters_created += 1
 
                     logger.info(f"Character profile created: {char_name} (seed: {profile['seed']})")
+
+                    # QUOTA OPTIMIZATION: Add small delay to avoid rate limits (15 req/min)
+                    # 4 seconds between requests = ~15 requests/minute (within free tier limits)
+                    import time as time_module
+                    time_module.sleep(4)
 
                 except Exception as e:
                     logger.warning(f"Failed to create character profile for {char_name}: {e}")

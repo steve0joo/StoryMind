@@ -191,7 +191,7 @@ def generate_character_image(character_id):
 
         # Get style from request (optional)
         data = request.get_json() or {}
-        style = data.get('style', 'photorealistic portrait, detailed, high quality')
+        style = data.get('realistic portrait, photorealistic, highly detailed, professional photography, studio lighting')
         aspect_ratio = data.get('aspect_ratio', '1:1')
 
         # Generate image using Imagen 3

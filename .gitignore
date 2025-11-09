@@ -8,6 +8,9 @@ backend/**/__pycache__/
 *.db
 *.log
 
+# Logs directory
+backend/logs/
+
 # Node
 frontend/node_modules/
 frontend/dist/

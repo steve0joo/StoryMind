@@ -6,6 +6,7 @@ Handles book upload, processing, and retrieval
 import os
 import time
 import uuid
+import logging
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 
@@ -20,6 +21,9 @@ from services.character_service import CharacterExtractor
 
 # Create Blueprint
 books_bp = Blueprint('books', __name__)
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
 
 # Allowed file extensions (TXT not supported by document_processor)
 ALLOWED_EXTENSIONS = {'.pdf', '.epub'}
@@ -93,18 +97,18 @@ def upload_book():
         file_path = os.path.join(upload_folder, unique_filename)
         file.save(file_path)
 
-        print(f"✓ File saved: {file_path}")
+        logger.info(f"File saved: {file_path}")
 
         # Step 1: Process book with document_processor
-        print(f"Processing book: {filename}")
+        logger.info(f"Processing book: {filename}")
         book_result = process_book(file_path)
         chunks = book_result['chunks']
         metadata = book_result['metadata']
 
-        print(f"✓ Processed {len(chunks)} chunks")
+        logger.info(f"Processed {len(chunks)} chunks from {filename}")
 
         # Step 2: Create FAISS index with RAG system
-        print("Creating FAISS index...")
+        logger.info("Creating FAISS index for semantic search")
         book_id = str(uuid.uuid4())
         rag = BookRAG()
         rag.ingest_chunks(chunks, book_id)
@@ -117,17 +121,17 @@ def upload_book():
         os.makedirs(faiss_dir, exist_ok=True)
         faiss_index_path = rag.save_index(faiss_dir)
 
-        print(f"✓ FAISS index saved: {faiss_index_path}")
+        logger.info(f"FAISS index saved to: {faiss_index_path}")
 
         # Step 3: Extract characters
-        print("Extracting characters...")
+        logger.info("Extracting characters using Gemini")
         extractor = CharacterExtractor()
 
         # Use first 15000 characters of book for character extraction
         book_text = "\n".join(chunks[:10])  # First 10 chunks
         character_names = extractor.extract_character_names(book_text, max_characters=20)
 
-        print(f"✓ Extracted {len(character_names)} characters: {character_names}")
+        logger.info(f"Extracted {len(character_names)} characters: {character_names}")
 
         # Step 4: Create Book record in database
         db = get_db()
@@ -149,7 +153,7 @@ def upload_book():
             db.add(book)
             db.commit()
 
-            print(f"✓ Book record created: {book_id}")
+            logger.info(f"Book record created in database: {book_id}")
 
             # Step 5: Create Character records
             characters_created = 0
@@ -171,10 +175,10 @@ def upload_book():
                     db.add(character)
                     characters_created += 1
 
-                    print(f"✓ Character created: {char_name}")
+                    logger.info(f"Character profile created: {char_name} (seed: {profile['seed']})")
 
                 except Exception as e:
-                    print(f"⚠ Failed to create character {char_name}: {e}")
+                    logger.warning(f"Failed to create character profile for {char_name}: {e}")
                     continue
 
             # Update book with character count
@@ -182,7 +186,7 @@ def upload_book():
             book.processing_status = 'completed'
             db.commit()
 
-            print(f"✓ Book processing completed: {characters_created} characters")
+            logger.info(f"Book processing completed successfully: {characters_created} characters created")
 
             # Calculate processing time
             processing_time = time.time() - start_time
@@ -199,7 +203,7 @@ def upload_book():
 
         except Exception as e:
             db.rollback()
-            print(f"❌ Database error: {e}")
+            logger.error(f"Database error during book creation: {e}", exc_info=True)
 
             # Update book status to failed
             if book:
@@ -212,17 +216,15 @@ def upload_book():
             db.close()
 
     except Exception as e:
-        print(f"❌ Error processing book: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error processing book upload: {e}", exc_info=True)
 
         # Cleanup uploaded file on failure
         try:
             if 'file_path' in locals() and os.path.exists(file_path):
                 os.remove(file_path)
-                print(f"✓ Cleaned up uploaded file: {file_path}")
+                logger.info(f"Cleaned up uploaded file: {file_path}")
         except Exception as cleanup_error:
-            print(f"⚠ Failed to cleanup file: {cleanup_error}")
+            logger.warning(f"Failed to cleanup uploaded file: {cleanup_error}")
 
         # Cleanup FAISS index on failure
         try:
@@ -232,9 +234,9 @@ def upload_book():
                 pkl_path = faiss_index_path.replace('.faiss', '.pkl')
                 if os.path.exists(pkl_path):
                     os.remove(pkl_path)
-                print(f"✓ Cleaned up FAISS index: {faiss_index_path}")
+                logger.info(f"Cleaned up FAISS index: {faiss_index_path}")
         except Exception as cleanup_error:
-            print(f"⚠ Failed to cleanup FAISS index: {cleanup_error}")
+            logger.warning(f"Failed to cleanup FAISS index: {cleanup_error}")
 
         return jsonify({
             'error': 'Processing failed',
@@ -289,7 +291,7 @@ def list_books():
             db.close()
 
     except Exception as e:
-        print(f"❌ Error listing books: {e}")
+        logger.error(f"Error listing books: {e}", exc_info=True)
         return jsonify({
             'error': 'Failed to list books',
             'message': str(e)
@@ -331,7 +333,7 @@ def get_book(book_id):
             db.close()
 
     except Exception as e:
-        print(f"❌ Error getting book: {e}")
+        logger.error(f"Error getting book {book_id}: {e}", exc_info=True)
         return jsonify({
             'error': 'Failed to get book',
             'message': str(e)
@@ -386,7 +388,7 @@ def get_book_characters(book_id):
             db.close()
 
     except Exception as e:
-        print(f"❌ Error getting characters: {e}")
+        logger.error(f"Error getting characters for book {book_id}: {e}", exc_info=True)
         return jsonify({
             'error': 'Failed to get characters',
             'message': str(e)

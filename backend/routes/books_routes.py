@@ -25,8 +25,8 @@ books_bp = Blueprint('books', __name__)
 # Set up logger for this module
 logger = logging.getLogger(__name__)
 
-# Allowed file extensions (TXT not supported by document_processor)
-ALLOWED_EXTENSIONS = {'.pdf', '.epub'}
+# Allowed file extensions
+ALLOWED_EXTENSIONS = {'.pdf', '.epub', '.txt'}
 
 
 def allowed_file(filename):

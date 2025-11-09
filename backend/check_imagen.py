@@ -74,7 +74,7 @@ try:
 
     # Try to load Imagen 3
     print("   Attempting to load Imagen 3 model...")
-    model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+    model = ImageGenerationModel.from_pretrained("imagen-3.0-generate")
     print("   ✓ Imagen 3 model loaded successfully!")
     print("   ✓ YOU HAVE ACCESS TO IMAGEN 3!")
     print("\n   Model details:")

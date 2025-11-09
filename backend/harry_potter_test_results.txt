@@ -1,0 +1,26 @@
+======================================================================
+ TESTING WITH HARRY POTTER
+======================================================================
+
+STEP 1: Processing PDF...
+Loading document: harry-potter-and-the-philosophers-stone-by-jk-rowling.pdf
+Traceback (most recent call last):
+  File "/Users/steve.joo/Documents/StoryMind/backend/test_harry_potter.py", line 67, in <module>
+    test_harry_potter()
+  File "/Users/steve.joo/Documents/StoryMind/backend/test_harry_potter.py", line 20, in test_harry_potter
+    result = process_book(pdf_path, chunk_size=1000, chunk_overlap=200)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/steve.joo/Documents/StoryMind/backend/services/document_processor.py", line 68, in process_book
+    documents: List[Document] = loader.load()
+                                ^^^^^^^^^^^^^
+  File "/Users/steve.joo/Documents/StoryMind/backend/venv/lib/python3.11/site-packages/langchain_core/document_loaders/base.py", line 32, in load
+    return list(self.lazy_load())
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/steve.joo/Documents/StoryMind/backend/venv/lib/python3.11/site-packages/langchain_community/document_loaders/unstructured.py", line 107, in lazy_load
+    elements = self._get_elements()
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/steve.joo/Documents/StoryMind/backend/venv/lib/python3.11/site-packages/langchain_community/document_loaders/pdf.py", line 72, in _get_elements
+    from unstructured.partition.pdf import partition_pdf
+  File "/Users/steve.joo/Documents/StoryMind/backend/venv/lib/python3.11/site-packages/unstructured/partition/pdf.py", line 14, in <module>
+    from pdfminer import psparser
+ModuleNotFoundError: No module named 'pdfminer'

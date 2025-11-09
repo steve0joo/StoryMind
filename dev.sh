@@ -120,7 +120,7 @@ cmd_db_status() {
     sqlite3 "$BACKEND_DIR/data/storymind.db" << EOF
 .mode column
 .headers on
-SELECT 'Books' as Table, COUNT(*) as Count FROM books
+SELECT 'Books' as EntityType, COUNT(*) as Count FROM books
 UNION ALL
 SELECT 'Characters', COUNT(*) FROM characters
 UNION ALL

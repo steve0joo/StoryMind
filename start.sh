@@ -10,6 +10,9 @@
 
 set -e  # Exit on error
 
+# Add common paths for npm/node (for macOS Homebrew, nvm, etc.)
+export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.nvm/versions/node/$(ls $HOME/.nvm/versions/node 2>/dev/null | tail -1)/bin:$PATH"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -111,9 +114,9 @@ if [ ! -d "venv" ]; then
     exit 1
 fi
 
-# Start backend in background with proper process group
+# Start backend in background
 source venv/bin/activate
-setsid python app.py > "$PROJECT_ROOT/backend.log" 2>&1 &
+python app.py > "$PROJECT_ROOT/backend.log" 2>&1 &
 BACKEND_PID=$!
 disown  # Detach from shell so trap handles cleanup
 
@@ -153,8 +156,8 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Start frontend in background with proper process group
-setsid npm run dev > "$PROJECT_ROOT/frontend.log" 2>&1 &
+# Start frontend in background
+npm run dev > "$PROJECT_ROOT/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 disown  # Detach from shell so trap handles cleanup
 

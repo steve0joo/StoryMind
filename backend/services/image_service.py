@@ -49,7 +49,8 @@ class ImageGenerator:
         aiplatform.init(project=self.project_id, location=self.location)
 
         # Load Imagen 3 model
-        self.model = ImageGenerationModel.from_pretrained("imagen-3.0-generate")
+        # Updated model name for Vertex AI Imagen 3
+        self.model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
 
         print("✓ Imagen 3 model loaded and ready")
 

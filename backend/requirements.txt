@@ -1,6 +1,7 @@
 # StoryMind Backend Dependencies
-# Python 3.9+ required (tested with 3.9.6)
-# Updated: November 9, 2025
+# Python 3.10+ REQUIRED (recommended: 3.11+)
+# Tested with: Python 3.11.9
+
 # All packages tested and verified working
 
 # ============================================================================
@@ -41,8 +42,10 @@ sqlalchemy==2.0.35              # ORM for SQLite database
 # ============================================================================
 python-dotenv==1.0.1            # Environment variable management
 pydantic==2.10.3                # Data validation
-numpy==1.26.4                   # Numerical operations (specify version for stability)
+numpy>=1.24.0,<2.0.0            # Numerical operations (compatible with LangChain)
 requests==2.32.3                # HTTP library
+urllib3>=2.0.0,<3.0.0           # HTTP client library (fixes OpenSSL warning)
+importlib-metadata>=6.0.0       # Fixes importlib.metadata error
 
 # ============================================================================
 # Development & Testing
@@ -66,7 +69,11 @@ pytest==7.4.0                   # Testing framework
 # 5. Disk space required: ~500 MB
 #
 # VERIFIED WORKING ON:
-# - Python 3.9.6
+# - Python 3.11.9 (recommended)
+# - Python 3.10+ (minimum)
 # - macOS (M1/M2 and Intel)
 # - Tested: November 9, 2025
-# ============================================================================
+#
+# UPGRADE FROM PYTHON 3.9:
+# See PYTHON_UPGRADE_GUIDE.md for migration instructions
+# ============================================================================  

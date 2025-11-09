@@ -87,11 +87,12 @@ class CharacterExtractor:
 EXTRACTION RULES:
 1. Extract FULL NAMES (e.g., "Harry Potter" not just "Harry")
 2. Include titles/honorifics if they're part of the character's identity (e.g., "Professor Dumbledore", "Lady Macbeth")
-3. ONLY include MAIN and SIGNIFICANT SECONDARY characters (not background/minor characters)
-4. Characters mentioned multiple times or central to plot are main characters
+3. Include MAIN characters and ALL SIGNIFICANT SECONDARY characters with names
+4. Characters mentioned by name multiple times should be included
 5. Exclude generic references (e.g., "the man", "a woman", "the child")
-6. Maximum {max_chars} characters total
-7. Use exact names as they appear in the text (preserve spelling and capitalization)
+6. Exclude very minor characters mentioned only once in passing
+7. Maximum {max_chars} characters total
+8. Use exact names as they appear in the text (preserve spelling and capitalization)
 
 Text excerpt:
 {text}
@@ -105,8 +106,21 @@ Example of correct output format:
 JSON array of main character names:"""
         )
 
-        # Format the prompt
-        prompt = prompt_template.format(text=book_text[:15000], max_chars=max_characters)  # Use first 15k chars
+        # Format the prompt - use more text for comprehensive character extraction
+        # Sample text throughout the book (beginning, middle, end) to catch all characters
+        text_len = len(book_text)
+        if text_len <= 30000:
+            # Short book - use entire text
+            sample_text = book_text
+        else:
+            # Long book - sample from beginning, middle, and end (10k chars each)
+            beginning = book_text[:10000]
+            middle_start = text_len // 2 - 5000
+            middle = book_text[middle_start:middle_start + 10000]
+            end = book_text[-10000:]
+            sample_text = f"{beginning}\n\n[... middle section ...]\n\n{middle}\n\n[... later section ...]\n\n{end}"
+
+        prompt = prompt_template.format(text=sample_text, max_chars=max_characters)
 
         # Call Gemini
         response = self.llm.invoke(prompt)

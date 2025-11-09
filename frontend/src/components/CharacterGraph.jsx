@@ -35,19 +35,32 @@ function CharacterGraph({ characters, onNodeClick }) {
       return;
     }
 
+    // Sort characters by mention count to identify main character
+    const sortedByMentions = [...characters].sort((a, b) => (b.mention_count || 0) - (a.mention_count || 0));
+    const mainCharacter = sortedByMentions[0];
+
     // Transform characters into graph nodes
-    const nodes = characters.map((char, index) => ({
-      id: char.id,
-      name: char.name,
-      description: char.canonical_description?.substring(0, 100) + '...' || 'No description',
-      mentionCount: char.mention_count || 0,
-      // Size based on mention count (more mentions = bigger node)
-      val: Math.max(5, Math.min(20, (char.mention_count || 1) / 2)),
-      // Color based on mention count (gradient from light to dark blue)
-      color: getNodeColor(char.mention_count || 0),
-      x: Math.cos((index / characters.length) * 2 * Math.PI) * 100,
-      y: Math.sin((index / characters.length) * 2 * Math.PI) * 100,
-    }));
+    const nodes = characters.map((char, index) => {
+      const isMainCharacter = char.id === mainCharacter?.id;
+
+      return {
+        id: char.id,
+        name: char.name,
+        description: char.canonical_description?.substring(0, 100) + '...' || 'No description',
+        mentionCount: char.mention_count || 0,
+        isMainCharacter,
+        // Size based on mention count (more mentions = bigger node)
+        val: Math.max(5, Math.min(20, (char.mention_count || 1) / 2)),
+        // Color based on mention count (gradient from light to dark blue)
+        color: getNodeColor(char.mention_count || 0),
+        // Position main character at center (0, 0), others in circle around
+        x: isMainCharacter ? 0 : Math.cos((index / characters.length) * 2 * Math.PI) * 150,
+        y: isMainCharacter ? 0 : Math.sin((index / characters.length) * 2 * Math.PI) * 150,
+        // Pin main character to center
+        fx: isMainCharacter ? 0 : undefined,
+        fy: isMainCharacter ? 0 : undefined,
+      };
+    });
 
     // Extract relationships from characters
     // Assuming relationships are stored as JSON string in character.relationships
@@ -85,15 +98,15 @@ function CharacterGraph({ characters, onNodeClick }) {
     // If no explicit relationships, create connections based on mention counts
     // (Characters with high mentions are likely to be related)
     if (links.length === 0 && nodes.length > 1) {
-      // Connect each character to the most mentioned character
-      const sortedByMentions = [...nodes].sort((a, b) => b.mentionCount - a.mentionCount);
-      const mainCharacter = sortedByMentions[0];
+      // Find main character (already sorted above)
+      const mainNode = nodes.find(n => n.isMainCharacter);
 
+      // Connect each character to the main character (star/hub topology)
       nodes.forEach(node => {
-        if (node.id !== mainCharacter.id) {
+        if (node.id !== mainNode.id) {
           links.push({
             source: node.id,
-            target: mainCharacter.id,
+            target: mainNode.id,
             relationship: 'appears with',
             value: 1
           });
@@ -101,12 +114,13 @@ function CharacterGraph({ characters, onNodeClick }) {
       });
 
       // Add some cross-connections between secondary characters
-      for (let i = 1; i < Math.min(sortedByMentions.length, 4); i++) {
-        for (let j = i + 1; j < Math.min(sortedByMentions.length, 4); j++) {
+      const secondaryNodes = nodes.filter(n => !n.isMainCharacter);
+      for (let i = 0; i < Math.min(secondaryNodes.length - 1, 3); i++) {
+        for (let j = i + 1; j < Math.min(secondaryNodes.length, 4); j++) {
           if (Math.random() > 0.5) { // 50% chance of connection
             links.push({
-              source: sortedByMentions[i].id,
-              target: sortedByMentions[j].id,
+              source: secondaryNodes[i].id,
+              target: secondaryNodes[j].id,
               relationship: 'interacts with',
               value: 0.5
             });
@@ -156,23 +170,18 @@ function CharacterGraph({ characters, onNodeClick }) {
         // Hide default node circles - we'll render text only
         nodeCanvasObject={(node, ctx, globalScale) => {
           const label = node.name;
-          const fontSize = 14 / globalScale;
-          ctx.font = `${fontSize}px Arial, sans-serif`;
-
-          // Measure text width for background
-          const textWidth = ctx.measureText(label).width;
-          const bckgDimensions = [textWidth + 8, fontSize + 4];
+          // Main character gets larger font
+          const baseFontSize = node.isMainCharacter ? 18 : 14;
+          const fontSize = baseFontSize / globalScale;
+          const fontWeight = node.isMainCharacter ? 'bold' : 'normal';
+          ctx.font = `${fontWeight} ${fontSize}px Arial, sans-serif`;
 
           // Draw text (no background circle, just clean text)
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
-          // Text color based on mention count - darker for more mentioned
-          const intensity = Math.min(180, 100 + node.mentionCount * 3);
-          ctx.fillStyle = `rgb(${255 - intensity}, ${255 - intensity}, 255)`;
-
-          // Draw text only
-          ctx.fillStyle = '#4F46E5'; // Indigo-600
+          // Main character in darker indigo, secondary characters in lighter indigo
+          ctx.fillStyle = node.isMainCharacter ? '#3730A3' : '#4F46E5'; // Indigo-800 vs Indigo-600
           ctx.fillText(label, node.x, node.y);
         }}
         nodeCanvasObjectMode={() => 'replace'} // Replace default rendering
@@ -187,7 +196,22 @@ function CharacterGraph({ characters, onNodeClick }) {
         cooldownTicks={100}
         enableZoomPanInteraction={true}
         enableNodeDrag={true}
+        // Stronger forces to maintain hub layout with main character at center
+        d3AlphaDecay={0.02}
         d3VelocityDecay={0.3}
+        warmupTicks={50}
+        // Custom force to keep main character centered
+        onEngineStop={() => {
+          // Graph has stabilized
+          const fg = graphRef.current;
+          if (fg) {
+            // Center camera on the main character
+            const mainNode = graphData.nodes.find(n => n.isMainCharacter);
+            if (mainNode) {
+              fg.centerAt(0, 0, 1000); // Center at (0, 0) with smooth transition
+            }
+          }
+        }}
       />
 
       {/* Legend */}

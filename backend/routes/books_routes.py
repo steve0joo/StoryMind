@@ -130,9 +130,9 @@ def upload_book():
         logger.info("Extracting characters using Gemini")
         extractor = CharacterExtractor()
 
-        # QUOTA OPTIMIZATION: Use 35 chunks instead of 50 (reduces token usage, still gets main characters)
-        # 35 chunks = ~35,000 chars, enough for character introductions in most books
-        book_text = "\n".join(chunks[:35])  # First 35 chunks for character extraction
+        # Use ALL chunks to ensure we find characters mentioned throughout entire book
+        # Some characters may be introduced later in the story
+        book_text = "\n".join(chunks)  # Use entire book for character extraction
         character_names = extractor.extract_character_names(book_text, max_characters=50)
 
         logger.info(f"Extracted {len(character_names)} characters: {character_names}")

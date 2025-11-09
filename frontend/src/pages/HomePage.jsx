@@ -147,7 +147,7 @@ function HomePage() {
             </form>
 
             {/* Upload Button */}
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-center">
               <input
                 ref={fileInputRef}
                 type="file"

@@ -10,6 +10,7 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5001',
         changeOrigin: true,
+        timeout: 600000, // 10 minutes for long-running requests (book processing)
       },
       '/static': {
         target: 'http://localhost:5001',

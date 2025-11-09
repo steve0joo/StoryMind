@@ -89,7 +89,7 @@ export const uploadBook = async (file) => {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
-    timeout: 120000, // 2 minutes for book processing
+    timeout: 600000, // 10 minutes for book processing (analyzing entire book takes longer)
   });
 
   return response.data;

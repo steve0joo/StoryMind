@@ -49,10 +49,13 @@ def list_characters():
         # Get optional book_id filter
         book_id = request.args.get('book_id')
 
-        # Query characters
+        # Query characters, sorted by mention_count (most mentioned first)
         query = db.query(Character)
         if book_id:
             query = query.filter(Character.book_id == book_id)
+
+        # Sort by mention_count descending (most mentioned first), then by name
+        query = query.order_by(Character.mention_count.desc(), Character.name)
 
         characters = query.all()
 

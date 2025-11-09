@@ -88,9 +88,9 @@ class Character(Base):
     book = relationship('Book', back_populates='characters')
     images = relationship('GeneratedImage', back_populates='character', cascade='all, delete-orphan')
 
-    def to_dict(self):
+    def to_dict(self, include_images=True):
         """Convert model to dictionary for JSON serialization"""
-        return {
+        data = {
             'id': self.id,
             'book_id': self.book_id,
             'name': self.name,
@@ -100,6 +100,12 @@ class Character(Base):
             'relationships': self.relationships,
             'created_at': self.created_at
         }
+
+        # Include images relationship if requested
+        if include_images and self.images:
+            data['images'] = [img.to_dict() for img in self.images]
+
+        return data
 
 
 class GeneratedImage(Base):

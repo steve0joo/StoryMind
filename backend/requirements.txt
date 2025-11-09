@@ -46,6 +46,7 @@ numpy>=1.24.0,<2.0.0            # Numerical operations (compatible with LangChai
 requests==2.32.3                # HTTP library
 urllib3>=2.0.0,<3.0.0           # HTTP client library (fixes OpenSSL warning)
 importlib-metadata>=6.0.0       # Fixes importlib.metadata error
+pillow==10.4.0                  # Image processing for placeholder generation
 
 # ============================================================================
 # Development & Testing

@@ -48,6 +48,14 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# Static file serving route for uploaded images and books
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve static files (images, books) from the uploads directory"""
+    from flask import send_from_directory
+    static_dir = os.path.join(os.path.dirname(__file__), 'static')
+    return send_from_directory(static_dir, filename)
+
 # Ensure upload directories exist
 # Ensures that the backend has all the folders it needs 
     # static/uploads/books/

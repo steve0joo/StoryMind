@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getBook, getBookCharacters, generateImage } from '../api/client';
+import CharacterGraph from '../components/CharacterGraph';
 
 function BookDetail() {
   const { bookId } = useParams();
@@ -11,6 +12,8 @@ function BookDetail() {
   const [error, setError] = useState(null);
   const [generatingImages, setGeneratingImages] = useState({}); // Track which characters are generating
   const [imageErrors, setImageErrors] = useState({}); // Track image generation errors
+  const [showGraph, setShowGraph] = useState(true); // Toggle between graph and list view
+  const [selectedCharacter, setSelectedCharacter] = useState(null); // Character selected from graph
 
   useEffect(() => {
     loadBookData();
@@ -26,7 +29,21 @@ function BookDetail() {
         getBookCharacters(bookId),
       ]);
       setBook(bookData);
-      setCharacters(charactersData.characters || []);
+
+      // Transform characters to extract image URL from images array
+      const transformedCharacters = (charactersData.characters || []).map(char => {
+        // If character has images array, extract the first image URL
+        if (char.images && char.images.length > 0) {
+          return {
+            ...char,
+            image_url: char.images[0].image_url,
+            image_generated_at: char.images[0].created_at
+          };
+        }
+        return char;
+      });
+
+      setCharacters(transformedCharacters);
     } catch (err) {
       console.error('Error loading book:', err);
       setError('Failed to load book details. Please try again.');
@@ -46,10 +63,21 @@ function BookDetail() {
       const result = await generateImage(characterId, style, aspectRatio);
 
       // Update character with new image
+      // Backend returns { image: { image_url: "..." } }, so extract the nested image_url
+      const imageUrl = result.image?.image_url || result.image_url;
+
+      // Add cache-busting timestamp to force browser to reload image
+      const timestamp = Date.now();
+      const imageUrlWithCache = `${imageUrl}?t=${timestamp}`;
+
       setCharacters(prev =>
         prev.map(char =>
           char.id === characterId
-            ? { ...char, image_url: result.image_url, image_generated_at: new Date().toISOString() }
+            ? {
+                ...char,
+                image_url: imageUrlWithCache,
+                image_generated_at: new Date().toISOString()
+              }
             : char
         )
       );
@@ -151,7 +179,45 @@ function BookDetail() {
 
       {/* Characters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Characters</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Characters</h2>
+
+          {/* View Toggle */}
+          {characters.length > 0 && (
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setShowGraph(true)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  showGraph
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Graph View
+                </div>
+              </button>
+              <button
+                onClick={() => setShowGraph(false)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  !showGraph
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                  List View
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
 
         {characters.length === 0 ? (
           <div className="bg-white rounded-xl shadow-md p-12 text-center border border-gray-200">
@@ -161,9 +227,41 @@ function BookDetail() {
             <p className="text-gray-600 text-lg">No characters found for this book</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <>
+            {/* Graph View */}
+            {showGraph && (
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Character Relationship Network</h3>
+                <CharacterGraph
+                  characters={characters}
+                  onNodeClick={(character) => {
+                    setSelectedCharacter(character);
+                    setShowGraph(false);
+                    // Scroll to character
+                    setTimeout(() => {
+                      const element = document.getElementById(`character-${character.id}`);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        element.classList.add('ring-4', 'ring-indigo-300');
+                        setTimeout(() => {
+                          element.classList.remove('ring-4', 'ring-indigo-300');
+                        }, 2000);
+                      }
+                    }, 100);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* List View */}
+            {!showGraph && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {characters.map((character) => (
-              <div key={character.id} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+              <div
+                key={character.id}
+                id={`character-${character.id}`}
+                className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden transition-all"
+              >
                 <div className="p-6">
                   {/* Character Header */}
                   <div className="flex items-start justify-between mb-4">
@@ -245,7 +343,9 @@ function BookDetail() {
                 </div>
               </div>
             ))}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

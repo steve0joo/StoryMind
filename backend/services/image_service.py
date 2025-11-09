@@ -222,22 +222,66 @@ class ImageGenerator:
             Path to placeholder image
         """
         from pathlib import Path
+        from PIL import Image, ImageDraw, ImageFont
+        import random
 
         # Create placeholder directory
         placeholder_dir = Path(__file__).parent.parent / "static" / "uploads" / "images"
         placeholder_dir.mkdir(parents=True, exist_ok=True)
 
         safe_name = character_name.replace(" ", "_").lower()
-        filename = f"placeholder_{safe_name}_{seed}.txt"
+        filename = f"placeholder_{safe_name}_{seed}.png"
         filepath = placeholder_dir / filename
 
-        # Write placeholder info
-        with open(filepath, 'w') as f:
-            f.write(f"PLACEHOLDER IMAGE\n")
-            f.write(f"Character: {character_name}\n")
-            f.write(f"Seed: {seed}\n")
-            f.write(f"Description: {description}\n")
-            f.write(f"\nTo generate real images, ensure Imagen 3 API is configured.\n")
+        # Create a simple placeholder image (512x512)
+        width, height = 512, 512
+
+        # Use seed for consistent color
+        random.seed(seed)
+        r = random.randint(100, 200)
+        g = random.randint(100, 200)
+        b = random.randint(100, 200)
+
+        # Create image with solid color background
+        img = Image.new('RGB', (width, height), color=(r, g, b))
+        draw = ImageDraw.Draw(img)
+
+        # Draw character initials in the center
+        initials = ''.join([word[0].upper() for word in character_name.split()[:2]])
+
+        try:
+            # Try to use a default font
+            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 120)
+        except:
+            # Fallback to default font
+            font = ImageFont.load_default()
+
+        # Get text bounding box
+        bbox = draw.textbbox((0, 0), initials, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+
+        # Center the text
+        x = (width - text_width) / 2
+        y = (height - text_height) / 2
+
+        # Draw white text
+        draw.text((x, y), initials, fill=(255, 255, 255), font=font)
+
+        # Draw "PLACEHOLDER" text at bottom
+        try:
+            small_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 24)
+        except:
+            small_font = ImageFont.load_default()
+
+        placeholder_text = "PLACEHOLDER"
+        bbox = draw.textbbox((0, 0), placeholder_text, font=small_font)
+        text_width = bbox[2] - bbox[0]
+        x = (width - text_width) / 2
+        draw.text((x, height - 40), placeholder_text, fill=(255, 255, 255), font=small_font)
+
+        # Save the image
+        img.save(filepath, 'PNG')
 
         return f"/static/uploads/images/{filename}"
 

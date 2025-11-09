@@ -81,6 +81,34 @@ def upload_book():
         filename = secure_filename(file.filename)
         file_ext = os.path.splitext(filename)[1]
 
+        # Check for duplicate books by filename
+        db = get_db()
+        try:
+            existing_book = db.query(Book).filter(Book.title == filename).first()
+            if existing_book:
+                logger.warning(f"Duplicate book detected: {filename}")
+
+                # Delete the existing book and all associated data
+                logger.info(f"Deleting existing book: {existing_book.id}")
+
+                # Delete associated characters and images
+                characters = db.query(Character).filter_by(book_id=existing_book.id).all()
+                for char in characters:
+                    # Delete images first (foreign key constraint)
+                    from models import GeneratedImage
+                    images = db.query(GeneratedImage).filter_by(character_id=char.id).all()
+                    for img in images:
+                        db.delete(img)
+                    db.delete(char)
+
+                # Delete the book
+                db.delete(existing_book)
+                db.commit()
+
+                logger.info(f"Existing book deleted, proceeding with new upload")
+        finally:
+            db.close()
+
         # Generate unique filename
         unique_filename = f"{uuid.uuid4()}{file_ext}"
 
@@ -127,9 +155,9 @@ def upload_book():
         logger.info("Extracting characters using Gemini")
         extractor = CharacterExtractor()
 
-        # Use first 15000 characters of book for character extraction
-        book_text = "\n".join(chunks[:10])  # First 10 chunks
-        character_names = extractor.extract_character_names(book_text, max_characters=20)
+        # Use more chunks for better character extraction (first 50 chunks = ~50,000 chars)
+        book_text = "\n".join(chunks[:50])  # First 50 chunks for comprehensive extraction
+        character_names = extractor.extract_character_names(book_text, max_characters=50)
 
         logger.info(f"Extracted {len(character_names)} characters: {character_names}")
 

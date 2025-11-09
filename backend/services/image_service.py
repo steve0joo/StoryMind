@@ -290,7 +290,7 @@ class ImageGenerator:
 
 def generate_character_image(
     character_profile: Dict,
-    style: str = "photorealistic portrait",
+    style: str = "photorealistic portrait, detailed, high quality",
     **kwargs
 ) -> Dict:
     """

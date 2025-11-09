@@ -160,7 +160,7 @@ def generate_character_image(character_id):
 
     Request body (optional):
     {
-        "style": "photorealistic portrait",
+        "style": "photorealistic portrait, detailed, high quality",
         "aspect_ratio": "1:1"
     }
 

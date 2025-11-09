@@ -48,7 +48,7 @@ def main():
         try:
             result = generate_character_image(
                 profile,
-                style="photorealistic portrait, detailed, book illustration style, high quality"
+                style="photorealistic portrait, detailed, high quality"
             )
 
             results.append(result)

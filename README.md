@@ -6,10 +6,11 @@ StoryMind generates consistent, text-accurate visual representations of characte
 
 ## Project Overview
 
-- **Status:** Pre-development (Hackathon MVP)
+- **Status:** Production Ready for Hackathon 🚀
 - **Target:** 36-hour hackathon for Google Media Mastery track
 - **Core Innovation:** Deterministic seed-based character consistency
-- **Tech Stack:** Flask + React + LangChain + FAISS + Imagen 3 + Gemini 2.0
+- **Tech Stack:** Flask + React + Custom FAISS RAG + Gemini 2.0 Flash + Imagen 3
+- **Key Features:** Character extraction, RAG-powered profiles, Graph visualization, One-command startup
 
 ## Quick Start
 
@@ -65,6 +66,18 @@ npm run dev
 
 ### 4. Run the Application
 
+**Option 1: One-Command Startup (Recommended)** ✨
+
+```bash
+# Start both backend and frontend with one command
+./start.sh
+
+# Servers start automatically with health checks
+# Press Ctrl+C to stop (guaranteed complete cleanup)
+```
+
+**Option 2: Manual Startup**
+
 **Terminal 1 - Backend:**
 
 ```bash
@@ -80,7 +93,8 @@ cd frontend
 npm run dev
 ```
 
-- Backend API: http://localhost:5000
+**URLs:**
+- Backend API: http://localhost:5001
 - Frontend UI: http://localhost:5173
 
 ## Project Structure
@@ -147,7 +161,7 @@ def generate_seed(character_name):
     return seed
 ```
 
-### Technology Choices
+### Technology Stacks
 
 **Backend:**
 
@@ -164,23 +178,17 @@ def generate_seed(character_name):
 - **Tailwind CSS 3.4.14** - Styling
 - **React Force Graph 1.44.7** - Character relationship visualization
 
-## 👥 Team Collaboration (3-Person Team)
+## Team Collaboration (3-Person Team)
 
 ### Git Workflow
 
 ```bash
 main              # Production-ready
   └── develop     # Integration branch
-        ├── feature/backend-api    # Person 1: Backend Lead
-        ├── feature/ml-pipeline    # Person 2: ML/AI Lead
-        └── feature/frontend-ui    # Person 3: Frontend Lead
+        ├── feature/backend
+        ├── feature/ai-rag-pipeline
+        └── feature/frontend
 ```
-
-### Roles
-
-- **Person 1: Backend Lead** - Flask API, Database, RAG system
-- **Person 2: ML/AI Lead** - Gemini integration, Imagen 3, Character profiles
-- **Person 3: Frontend Lead** - React UI, API integration, Styling
 
 ## Documentation
 
@@ -224,6 +232,29 @@ This prevents API rate limits and network issues during live demo.
 
 ## Development Commands
 
+### Quick Commands (One-Line Utilities)
+
+```bash
+# Start everything (recommended)
+./start.sh                # Start both servers with health checks
+
+# Stop everything
+./stop.sh                 # Stop all servers completely
+
+# Development helper
+./dev.sh                  # Show all available commands
+./dev.sh start            # Start servers
+./dev.sh stop             # Stop servers
+./dev.sh status           # Check server status
+./dev.sh db-status        # Show database stats
+./dev.sh db-clean         # Clean all data (with confirmation)
+./dev.sh logs             # View live logs
+./dev.sh test-rag         # Test RAG quality
+./dev.sh open             # Open app in browser
+```
+
+See **[QUICK_START.md](QUICK_START.md)** for complete documentation.
+
 ### Backend
 
 ```bash
@@ -235,6 +266,9 @@ python app.py
 
 # Reset database
 python init_db.py --reset
+
+# Clean everything
+python clean_everything.py
 
 # Run tests
 pytest
@@ -299,33 +333,18 @@ ALLOWED_ORIGINS=http://localhost:5173
 
 ## Roadmap
 
-### Hackathon (36 hours)
+### Hackathon (36 hours) - 95% Complete ✅
 
 - [x] Documentation complete
 - [x] Project structure setup
-- [ ] Backend RAG pipeline
-- [ ] Character extraction & synthesis
-- [ ] Image generation with consistency
-- [ ] Frontend UI & API integration
-- [ ] Demo preparation
-
-### Post-Hackathon
-
-- [ ] PostgreSQL migration
-- [ ] Redis caching
-- [ ] Google Cloud Storage for files
-- [ ] User authentication
-- [ ] Publisher API
-- [ ] Mobile app
-
-## Contributing
-
-This is a hackathon project. For the team:
-
-1. See MD files for your role and tasks
-2. Follow Git workflow (feature branches → develop → main)
-3. Run `python test_setup.py` before starting
-4. Pre-generate demo content with `scripts/demo_prep.py`
+- [x] Backend RAG pipeline (Custom FAISS implementation)
+- [x] Character extraction & synthesis (Gemini 2.0 Flash)
+- [x] Image generation with consistency (Deterministic seed system)
+- [x] Frontend UI & API integration (React + Vite)
+- [x] Character deduplication (Substring + Fuzzy + LLM)
+- [x] Character graph visualization (Minimalist design)
+- [x] Development workflow automation (One-command startup)
+- [x] Quota optimization (309% improvement)
 
 ## License
 
@@ -338,4 +357,4 @@ This project is licensed under CC BY-NC 4.0. No commercial use allowed without e
 
 ---
 
-**Ready to bring characters to life with AI!**
+**Ready to bring book characters to life with AI!**

@@ -1,15 +1,62 @@
-import { useState } from 'react';
-import { Search, BookOpen, Sparkles } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, BookOpen, Sparkles, Upload } from 'lucide-react';
+import { uploadBook } from '../api/client';
 
 function HomePage() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery);
-      // TODO: Implement search functionality
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/search');
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const result = await uploadBook(file);
+      // Navigate to the book detail page after successful upload
+      navigate(`/book/${result.book_id}`);
+    } catch (err) {
+      console.error('Upload error:', err);
+
+      // Determine specific error message
+      let errorMessage = 'Failed to upload book. Please try again.';
+
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        errorMessage = 'Upload timed out. The file might be too large or the server is not responding.';
+      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        errorMessage = 'Cannot connect to server. Make sure the backend is running on http://localhost:5001';
+      } else if (err.response) {
+        // Server responded with error
+        errorMessage = err.response.data?.message || err.response.data?.error || `Server error: ${err.response.status}`;
+      }
+
+      setUploadError(errorMessage);
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -98,6 +145,41 @@ function HomePage() {
                 </div>
               </div>
             </form>
+
+            {/* Upload Button */}
+            <div className="mt-6 flex justify-end">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.epub,.txt"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={handleUploadClick}
+                disabled={uploading}
+                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    Upload Book
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Upload Error Message */}
+            {uploadError && (
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-red-800 text-sm">{uploadError}</p>
+              </div>
+            )}
           </div>
 
           {/* Feature Cards */}
@@ -134,7 +216,7 @@ function HomePage() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">AI-Powered</h3>
               <p className="text-gray-600">
-                Powered by Gemini 2.5 & Imagen 3 for high-fidelity generation
+                Powered by Gemini 2.0 & Imagen 3 for high-fidelity generation
               </p>
             </div>
           </div>

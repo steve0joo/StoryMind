@@ -57,7 +57,7 @@ class ImageGenerator:
     def generate_character_image(
         self,
         character_profile: Dict,
-        style: str = "photorealistic portrait, detailed, high quality",
+        style: str = "realistic portrait, photorealistic, highly detailed, professional photography, studio lighting, neutral background",
         aspect_ratio: str = "1:1",
         safety_filter_level: str = "block_some",
         num_images: int = 1

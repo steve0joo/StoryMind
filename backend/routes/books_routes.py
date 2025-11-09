@@ -81,33 +81,8 @@ def upload_book():
         filename = secure_filename(file.filename)
         file_ext = os.path.splitext(filename)[1]
 
-        # Check for duplicate books by filename
-        db = get_db()
-        try:
-            existing_book = db.query(Book).filter(Book.title == filename).first()
-            if existing_book:
-                logger.warning(f"Duplicate book detected: {filename}")
-
-                # Delete the existing book and all associated data
-                logger.info(f"Deleting existing book: {existing_book.id}")
-
-                # Delete associated characters and images
-                characters = db.query(Character).filter_by(book_id=existing_book.id).all()
-                for char in characters:
-                    # Delete images first (foreign key constraint)
-                    from models import GeneratedImage
-                    images = db.query(GeneratedImage).filter_by(character_id=char.id).all()
-                    for img in images:
-                        db.delete(img)
-                    db.delete(char)
-
-                # Delete the book
-                db.delete(existing_book)
-                db.commit()
-
-                logger.info(f"Existing book deleted, proceeding with new upload")
-        finally:
-            db.close()
+        # We'll check for duplicates AFTER extracting metadata (see below)
+        # This placeholder will be replaced with actual duplicate detection
 
         # Generate unique filename
         unique_filename = f"{uuid.uuid4()}{file_ext}"
@@ -182,6 +157,53 @@ def upload_book():
             # Extract title from metadata or filename
             title = metadata.get('title', os.path.splitext(filename)[0])
             author = metadata.get('author', 'Unknown')
+
+            logger.info(f"Extracted metadata - Title: {title}, Author: {author}")
+
+            # AUTO-DELETE DUPLICATES: Check for existing books with same title
+            from models import GeneratedImage
+            existing_books = db.query(Book).filter(Book.title == title).all()
+            if existing_books:
+                logger.warning(f"Auto-deleting {len(existing_books)} duplicate book(s) with title: {title}")
+
+                for existing_book in existing_books:
+                    logger.info(f"Deleting duplicate: {existing_book.id}")
+
+                    # Delete associated characters and images
+                    characters = db.query(Character).filter_by(book_id=existing_book.id).all()
+                    for char in characters:
+                        images = db.query(GeneratedImage).filter_by(character_id=char.id).all()
+                        for img in images:
+                            # Delete physical image file
+                            if img.image_url:
+                                image_path = os.path.join(
+                                    os.path.dirname(os.path.dirname(__file__)),
+                                    'static',
+                                    img.image_url.lstrip('/')
+                                )
+                                if os.path.exists(image_path):
+                                    try:
+                                        os.remove(image_path)
+                                    except:
+                                        pass
+                            db.delete(img)
+                        db.delete(char)
+
+                    # Delete FAISS index files
+                    if existing_book.faiss_index_path:
+                        for ext in ['.faiss', '.pkl']:
+                            path = existing_book.faiss_index_path.replace('.faiss', ext)
+                            if os.path.exists(path):
+                                try:
+                                    os.remove(path)
+                                except:
+                                    pass
+
+                    # Delete the book
+                    db.delete(existing_book)
+
+                db.commit()
+                logger.info(f"✓ Deleted {len(existing_books)} duplicate(s), proceeding with upload")
 
             book = Book(
                 id=book_id,
@@ -384,6 +406,117 @@ def get_book(book_id):
         logger.error(f"Error getting book {book_id}: {e}", exc_info=True)
         return jsonify({
             'error': 'Failed to get book',
+            'message': str(e)
+        }), 500
+
+
+@books_bp.route('/<book_id>', methods=['DELETE'])
+def delete_book(book_id):
+    """
+    Delete a book and all associated data (characters, images, FAISS index)
+
+    DELETE /api/books/:id
+
+    Response:
+    {
+        "message": "Book deleted successfully",
+        "book_id": "abc-123",
+        "deleted_characters": 8,
+        "deleted_images": 5
+    }
+    """
+    try:
+        db = get_db()
+        try:
+            # Find the book
+            book = db.query(Book).filter(Book.id == book_id).first()
+
+            if not book:
+                return jsonify({
+                    'error': 'Book not found',
+                    'message': f'No book found with ID: {book_id}'
+                }), 404
+
+            book_title = book.title
+            faiss_index_path = book.faiss_index_path
+
+            logger.info(f"Deleting book: {book_title} (ID: {book_id})")
+
+            # Delete associated data
+            from models import GeneratedImage
+
+            # Get all characters for this book
+            characters = db.query(Character).filter(Character.book_id == book_id).all()
+            deleted_characters = len(characters)
+            deleted_images = 0
+
+            for char in characters:
+                # Delete all images for this character
+                images = db.query(GeneratedImage).filter(GeneratedImage.character_id == char.id).all()
+                for img in images:
+                    # Delete physical image file
+                    if img.image_url:
+                        image_path = os.path.join(
+                            os.path.dirname(os.path.dirname(__file__)),
+                            'static',
+                            img.image_url.lstrip('/')
+                        )
+                        if os.path.exists(image_path):
+                            try:
+                                os.remove(image_path)
+                                logger.info(f"Deleted image file: {image_path}")
+                            except Exception as e:
+                                logger.warning(f"Failed to delete image file {image_path}: {e}")
+
+                    db.delete(img)
+                    deleted_images += 1
+
+                # Delete character
+                db.delete(char)
+
+            # Delete FAISS index files
+            if faiss_index_path:
+                # Remove .faiss file
+                if os.path.exists(faiss_index_path):
+                    try:
+                        os.remove(faiss_index_path)
+                        logger.info(f"Deleted FAISS index: {faiss_index_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to delete FAISS index: {e}")
+
+                # Remove .pkl metadata file
+                pkl_path = faiss_index_path.replace('.faiss', '.pkl')
+                if os.path.exists(pkl_path):
+                    try:
+                        os.remove(pkl_path)
+                        logger.info(f"Deleted FAISS metadata: {pkl_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to delete FAISS metadata: {e}")
+
+            # Delete the book itself
+            db.delete(book)
+            db.commit()
+
+            logger.info(f"Successfully deleted book: {book_title} ({deleted_characters} characters, {deleted_images} images)")
+
+            return jsonify({
+                'message': 'Book deleted successfully',
+                'book_id': book_id,
+                'book_title': book_title,
+                'deleted_characters': deleted_characters,
+                'deleted_images': deleted_images
+            }), 200
+
+        except Exception as e:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"Error deleting book {book_id}: {e}", exc_info=True)
+        return jsonify({
+            'error': 'Failed to delete book',
             'message': str(e)
         }), 500
 

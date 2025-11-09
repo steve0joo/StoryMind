@@ -190,8 +190,10 @@ def generate_character_image(character_id):
             }), 404
 
         # Get style from request (optional)
+        # Use consistent global style for all characters to ensure visual consistency
         data = request.get_json() or {}
-        style = data.get('realistic portrait, photorealistic, highly detailed, professional photography, studio lighting')
+        DEFAULT_STYLE = 'realistic portrait, photorealistic, highly detailed, professional photography, studio lighting, neutral background'
+        style = data.get('style', DEFAULT_STYLE)
         aspect_ratio = data.get('aspect_ratio', '1:1')
 
         # Generate image using Imagen 3

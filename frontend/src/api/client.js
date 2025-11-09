@@ -65,11 +65,19 @@ export const getBookCharacters = async (bookId) => {
   return response.data;
 };
 
+// Global consistent style for all character images
+const CONSISTENT_STYLE = 'realistic portrait, photorealistic, highly detailed, professional photography, studio lighting, neutral background';
+
 export const generateImage = async (characterId, style, aspectRatio) => {
   const response = await apiClient.post(`/characters/${characterId}/generate-image`, {
-    style: style || 'photorealistic portrait, detailed, high quality',
+    style: style || CONSISTENT_STYLE,
     aspect_ratio: aspectRatio || '1:1'
   });
+  return response.data;
+};
+
+export const deleteBook = async (bookId) => {
+  const response = await apiClient.delete(`/books/${bookId}`);
   return response.data;
 };
 

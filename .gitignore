@@ -60,6 +60,7 @@ htmlcov/
 #CLAUDE
 docs/*.md
 CLAUDE.md
+IMAGE_STYLE_CONSISTENCY.md
 
 #JSON
 *.JSON

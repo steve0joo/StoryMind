@@ -52,7 +52,10 @@ function BookDetail() {
     }
   };
 
-  const handleGenerateImage = async (character, style = 'photorealistic portrait, detailed, high quality', aspectRatio = '1:1') => {
+  // Use consistent global style for all character images
+  const CONSISTENT_STYLE = 'realistic portrait, photorealistic, highly detailed, professional photography, studio lighting, neutral background';
+
+  const handleGenerateImage = async (character, style = CONSISTENT_STYLE, aspectRatio = '1:1') => {
     const characterId = character.id;
 
     // Mark as generating

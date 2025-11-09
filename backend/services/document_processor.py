@@ -29,15 +29,21 @@ try:
 except ImportError:
     UnstructuredEPUBLoader = None
 
+# Text file loader
+try:
+    from langchain_community.document_loaders import TextLoader
+except ImportError:
+    TextLoader = None
+
 
 def process_book(file_path: str, chunk_size: int = 1000, chunk_overlap: int = 200) -> Dict:
     """
-    Process a book file (PDF or EPUB) into text chunks for RAG.
+    Process a book file (PDF, EPUB, or TXT) into text chunks for RAG.
 
     Uses LangChain's document loaders and text splitters for fast processing.
 
     Args:
-        file_path: Path to the book file (.pdf or .epub)
+        file_path: Path to the book file (.pdf, .epub, or .txt)
         chunk_size: Size of each text chunk (default: 1000 characters)
         chunk_overlap: Overlap between chunks for context (default: 200 characters)
 
@@ -77,8 +83,11 @@ def process_book(file_path: str, chunk_size: int = 1000, chunk_overlap: int = 20
         if UnstructuredEPUBLoader is None:
             raise ValueError("EPUB support not available. Install with: pip install unstructured[epub]")
         loader = UnstructuredEPUBLoader(file_path)
+    elif file_ext == '.txt':
+        from langchain_community.document_loaders import TextLoader as TxtLoader
+        loader = TxtLoader(file_path)
     else:
-        raise ValueError(f"Unsupported file format: {file_ext}. Only .pdf are supported.")
+        raise ValueError(f"Unsupported file format: {file_ext}. Supported formats: .pdf, .epub, .txt")
 
     # Load the document
     print(f"Loading document: {os.path.basename(file_path)}")

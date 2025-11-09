@@ -21,8 +21,8 @@ from services.character_service import CharacterExtractor
 # Create Blueprint
 books_bp = Blueprint('books', __name__)
 
-# Allowed file extensions (TXT not supported by document_processor)
-ALLOWED_EXTENSIONS = {'.pdf', '.epub'}
+# Allowed file extensions
+ALLOWED_EXTENSIONS = {'.pdf', '.epub', '.txt'}
 
 
 def allowed_file(filename):

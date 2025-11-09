@@ -26,11 +26,26 @@ allowed_origins = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173').split(',
 CORS(app, origins=allowed_origins, supports_credentials=True)
 
 # Configure logging
-# Sets up basic logging so you can see whats happening in terminal
+# Enhanced logging with file output and detailed formatting
+log_level = logging.INFO if os.getenv('FLASK_DEBUG') == 'True' else logging.WARNING
+log_format = '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+
+# Create logs directory if it doesn't exist
+log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
+# Configure root logger
 logging.basicConfig(
-    level=logging.INFO if os.getenv('FLASK_DEBUG') == 'True' else logging.WARNING,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=log_level,
+    format=log_format,
+    handlers=[
+        # Console handler - output to terminal
+        logging.StreamHandler(),
+        # File handler - save logs to file
+        logging.FileHandler(os.path.join(log_dir, 'storymind.log'))
+    ]
 )
+
 logger = logging.getLogger(__name__)
 
 # Ensure upload directories exist
@@ -45,6 +60,24 @@ logger = logging.getLogger(__name__)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'books'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'images'), exist_ok=True)
 os.makedirs(os.path.join(os.path.dirname(__file__), 'data'), exist_ok=True)
+
+
+# Request logging middleware
+@app.before_request
+def log_request_info():
+    """Log information about each incoming request"""
+    logger.info(f"Request: {request.method} {request.path} from {request.remote_addr}")
+    if request.method in ['POST', 'PUT', 'PATCH']:
+        # Log request body for debugging (excluding file uploads)
+        if request.content_type and 'multipart/form-data' not in request.content_type:
+            logger.debug(f"Request body: {request.get_data(as_text=True)[:200]}")
+
+
+@app.after_request
+def log_response_info(response):
+    """Log information about each response"""
+    logger.info(f"Response: {response.status_code} for {request.method} {request.path}")
+    return response
 
 
 # Health check endpoint

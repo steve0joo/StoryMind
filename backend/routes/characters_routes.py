@@ -1,12 +1,11 @@
 """
 Characters API Routes
 Handles character retrieval and image generation
-
-TODO: Complete implementation for ML/AI Lead
 """
 
 import os
 import sys
+import logging
 from flask import Blueprint, request, jsonify
 
 # Add parent directory to path
@@ -16,6 +15,9 @@ from models import Character, GeneratedImage, Book, get_db
 
 # Create Blueprint
 characters_bp = Blueprint('characters', __name__)
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
 
 
 @characters_bp.route('/', methods=['GET'])
@@ -171,7 +173,6 @@ def generate_character_image(character_id):
         }
     }
 
-    TODO: Implement image generation
     """
     db = get_db()
 
@@ -194,6 +195,7 @@ def generate_character_image(character_id):
         from services.image_service import ImageGenerator
 
         try:
+            logger.info(f"Generating image for character: {character.name} (seed: {character.seed})")
             generator = ImageGenerator()
             profile = {
                 'name': character.name,
@@ -206,6 +208,8 @@ def generate_character_image(character_id):
                 aspect_ratio=aspect_ratio
             )
 
+            logger.info(f"Image generated successfully for {character.name} in {result['generation_time_ms']}ms")
+
             # Save image to database
             image = GeneratedImage(
                 character_id=character.id,
@@ -217,6 +221,8 @@ def generate_character_image(character_id):
             db.add(image)
             db.commit()
 
+            logger.info(f"Image record saved to database: {image.id}")
+
             return jsonify({
                 'image': image.to_dict(),
                 'message': 'Image generated successfully'
@@ -224,6 +230,7 @@ def generate_character_image(character_id):
 
         except Exception as gen_error:
             # If image generation fails, return error but don't crash
+            logger.error(f"Image generation failed for {character.name}: {gen_error}", exc_info=True)
             return jsonify({
                 'error': 'Image generation failed',
                 'message': str(gen_error),
@@ -231,6 +238,7 @@ def generate_character_image(character_id):
             }), 500
 
     except Exception as e:
+        logger.error(f"Error in generate_character_image endpoint: {e}", exc_info=True)
         return jsonify({
             'error': 'Failed to generate image',
             'message': str(e)

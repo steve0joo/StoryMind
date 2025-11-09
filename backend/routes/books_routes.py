@@ -161,6 +161,18 @@ def upload_book():
 
         logger.info(f"Extracted {len(character_names)} characters: {character_names}")
 
+        # Step 3.5: Deduplicate characters (remove aliases like "Mrs Dursley" + "Petunia")
+        try:
+            from utils.character_deduplication import CharacterDeduplicator
+            dedup = CharacterDeduplicator(use_llm=True)
+            character_names, alias_map = dedup.deduplicate_characters(character_names)
+            logger.info(f"After deduplication: {len(character_names)} unique characters")
+            if alias_map:
+                logger.info(f"Merged duplicates: {alias_map}")
+        except Exception as e:
+            logger.warning(f"Character deduplication failed: {e}, continuing with original names")
+            # Continue with original names if deduplication fails
+
         # Step 4: Create Book record in database
         db = get_db()
         book = None  # Initialize to prevent NameError in exception handler

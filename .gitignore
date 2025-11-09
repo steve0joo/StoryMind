@@ -55,3 +55,10 @@ htmlcov/
 #CLAUDE
 docs/*.md
 CLAUDE.md
+test_harry_potter.py
+test_ml_pipeline.py
+
+# Key files
+/backend/*.json
+/backend/*.md
+/docs/*.json

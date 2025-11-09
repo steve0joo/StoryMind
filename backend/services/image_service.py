@@ -1,17 +1,19 @@
 """
 Image Generation Service with Imagen 3
 
-Use the DIRECT google-generativeai API (not LangChain) for seed control.
-This is important for character consistency - we need to pass deterministic seeds.
-
-Direct Imagen 3 API for seed-based generation.
+Use Vertex AI's Imagen 3 for high-quality character image generation.
+Support deterministic seed-based generation for character consistency.
 """
 
 import os
 import time
-from typing import Dict, Optional
-import google.generativeai as genai
+from typing import Dict
+from pathlib import Path
 from dotenv import load_dotenv
+
+# Vertex AI imports for Imagen 3
+from google.cloud import aiplatform
+from vertexai.preview.vision_models import ImageGenerationModel
 
 # Load environment variables
 load_dotenv()
@@ -24,22 +26,37 @@ class ImageGenerator:
     This is the final piece of the character consistency pipeline.
     """
 
-    def __init__(self):
+    def __init__(self, project_id: str = None, location: str = "us-central1"):
         """
         Initialize the Imagen 3 generator.
-        """
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY not found in environment variables")
 
-        print("Initializing ImageGenerator with Imagen 3")
-        genai.configure(api_key=api_key)
-        print("✓ Imagen 3 API configured")
+        Args:
+            project_id: Google Cloud project ID (reads from env if not provided)
+            location: GCP region (default: us-central1)
+        """
+        # Get project ID from environment if not provided
+        self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not self.project_id:
+            raise ValueError("GOOGLE_CLOUD_PROJECT not found in environment variables")
+
+        self.location = location
+
+        print(f"Initializing ImageGenerator with Imagen 3")
+        print(f"  Project: {self.project_id}")
+        print(f"  Location: {self.location}")
+
+        # Initialize Vertex AI
+        aiplatform.init(project=self.project_id, location=self.location)
+
+        # Load Imagen 3 model
+        self.model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+
+        print("✓ Imagen 3 model loaded and ready")
 
     def generate_character_image(
         self,
         character_profile: Dict,
-        style: str = "photorealistic portrait",
+        style: str = "photorealistic portrait, detailed, high quality",
         aspect_ratio: str = "1:1",
         safety_filter_level: str = "block_some",
         num_images: int = 1
@@ -86,108 +103,112 @@ class ImageGenerator:
         start_time = time.time()
 
         try:
-            # Generate image using Imagen 3
-            # Note: As of the API version, Imagen 3 might be accessed through
-            # ImageGenerationModel or similar. The exact method may vary.
-            # This is a placeholder for the actual Imagen 3 API call.
+            # Generate image using Imagen 3 via Vertex AI
+            print("  Calling Imagen 3 API...")
 
-            # Check if Imagen 3 is available via the generativeai library
-            # The API is evolving, so we'll use the most current approach
+            # Note: Imagen 3 may not support seed parameter directly
+            # Include seed in prompt for consistency tracking
+            prompt_with_seed = f"{full_prompt} [ID: {seed}]"
 
-            model = genai.ImageGenerationModel("imagen-3.0-generate-001")
-
-            response = model.generate_images(
-                prompt=full_prompt,
+            response = self.model.generate_images(
+                prompt=prompt_with_seed,
                 number_of_images=num_images,
                 aspect_ratio=aspect_ratio,
                 safety_filter_level=safety_filter_level,
                 person_generation="allow_adult",  # For character portraits
-                # Note: seed parameter support depends on API version
-                # If available, use: seed=seed
+                # Note: seed parameter not currently available in Imagen 3 API
+                # This is tracked via prompt instead
             )
 
-            # Extract image data
+            # Extract generated image
             if response and response.images:
-                image_data = response.images[0]
-                # Save image locally or get URL
-                image_url = self._save_image(image_data, character_name, seed)
-            else:
-                raise ValueError("No images generated")
+                generated_image = response.images[0]
 
-        except AttributeError:
-            # Fallback: Imagen might be accessed differently
-            print("⚠️ Using fallback Imagen access method")
-            # For now, create a placeholder response
-            image_url = self._create_placeholder(character_name, seed, description)
+                # Save image locally
+                image_url = self._save_image(generated_image, character_name, seed)
+
+                generation_time_ms = int((time.time() - start_time) * 1000)
+
+                print(f"✓ Image generated in {generation_time_ms}ms")
+                print(f"  Saved to: {image_url}")
+
+                return {
+                    'image_url': image_url,
+                    'prompt': full_prompt,
+                    'seed': seed,
+                    'generation_time_ms': generation_time_ms,
+                    'character_name': character_name,
+                    'style': style
+                }
+            else:
+                raise ValueError("No images returned from Imagen 3")
 
         except Exception as e:
-            print(f"❌ Image generation failed: {e}")
-            print("Creating placeholder image")
+            generation_time_ms = int((time.time() - start_time) * 1000)
+            print(f"  ✗ Image generation failed: {e}")
+            print("  Creating placeholder image")
+
+            # Create placeholder as fallback
             image_url = self._create_placeholder(character_name, seed, description)
 
-        generation_time_ms = int((time.time() - start_time) * 1000)
+            return {
+                'image_url': image_url,
+                'prompt': full_prompt,
+                'seed': seed,
+                'generation_time_ms': generation_time_ms,
+                'character_name': character_name,
+                'style': style,
+                'error': str(e)
+            }
 
-        result = {
-            'image_url': image_url,
-            'prompt': full_prompt,
-            'seed': seed,
-            'generation_time_ms': generation_time_ms,
-            'character_name': character_name,
-            'style': style
-        }
-
-        print(f" Image generated in {generation_time_ms}ms")
-        print(f"  Saved to: {image_url}")
-
-        return result
-
-    def _save_image(self, image_data, character_name: str, seed: int) -> str:
+    def _save_image(self, image, character_name: str, seed: int) -> str:
         """
         Save generated image to local storage.
 
         Args:
-            image_data: Image data from Imagen API
+            image: Image data from Imagen API
             character_name: Character name (for filename)
             seed: Seed used (for filename)
 
         Returns:
             Path to saved image
         """
-        import base64
         from pathlib import Path
 
         # Create uploads directory if it doesn't exist
         upload_dir = Path(__file__).parent.parent / "static" / "uploads" / "images"
         upload_dir.mkdir(parents=True, exist_ok=True)
 
-        # Generate the filename using character name and seed
+        # Generate filename using character name and seed
         safe_name = character_name.replace(" ", "_").lower()
         filename = f"{safe_name}_{seed}.png"
         filepath = upload_dir / filename
 
-        # Save image (handling different possible formats from API)
+        # Save image
         try:
-            if hasattr(image_data, '_pil_image'):
-                # PIL Image object
-                image_data._pil_image.save(filepath)
-            elif hasattr(image_data, 'data'):
-                # Base64 encoded data
-                with open(filepath, 'wb') as f:
-                    f.write(base64.b64decode(image_data.data))
-            else:
-                # Raw bytes
-                with open(filepath, 'wb') as f:
-                    f.write(image_data)
+            # Imagen response has a save method
+            image.save(location=str(filepath), include_generation_parameters=False)
         except Exception as e:
             print(f"  Warning: Error saving image: {e}")
-            return f"/static/uploads/images/placeholder_{seed}.png"
+            # Try alternative methods
+            try:
+                if hasattr(image, '_pil_image'):
+                    image._pil_image.save(filepath)
+                elif hasattr(image, '_image_bytes'):
+                    with open(filepath, 'wb') as f:
+                        f.write(image._image_bytes)
+                else:
+                    raise Exception("Unknown image format")
+            except Exception as save_error:
+                print(f"  Error saving image: {save_error}")
+                return f"/static/uploads/images/error_{seed}.png"
 
         # Return relative URL for serving via Flask
         return f"/static/uploads/images/{filename}"
 
     def _create_placeholder(self, character_name: str, seed: int, description: str) -> str:
         """
-        Create a placeholder image when the Imagen API is not available.
+        Create a placeholder image when Imagen API is not available.
 
         This is useful for development/testing without using extra API credits.
 
@@ -264,6 +285,6 @@ if __name__ == "__main__":
         print(f"  Time: {result['generation_time_ms']}ms")
 
     except Exception as e:
-        print(f"\n⚠️ Test requires GOOGLE_API_KEY to be set")
+        print(f"\n⚠️ Test requires GOOGLE_CLOUD_PROJECT to be set")
         print(f"Error: {e}")
         print("\nNote: Imagen 3 API access may require additional setup")

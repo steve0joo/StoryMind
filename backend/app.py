@@ -96,15 +96,21 @@ def file_too_large(error):
     }), 413
 
 
-# Import and register API routes (will be created in routes module)
+# Import and register API routes
 try:
-    from routes import books_bp, characters_bp, images_bp
+    from routes.books_routes import books_bp
     app.register_blueprint(books_bp, url_prefix='/api/books')
-    app.register_blueprint(characters_bp, url_prefix='/api/characters')
-    app.register_blueprint(images_bp, url_prefix='/api/images')
-    logger.info("API routes registered successfully")
+    logger.info("Books routes registered successfully")
 except ImportError as e:
-    logger.warning(f"Routes not yet implemented: {e}")
+    logger.warning(f"Books routes not available: {e}")
+
+# Character routes (will be implemented in Task #8)
+try:
+    from routes.characters_routes import characters_bp
+    app.register_blueprint(characters_bp, url_prefix='/api/characters')
+    logger.info("Characters routes registered successfully")
+except ImportError as e:
+    logger.warning(f"Characters routes not yet implemented: {e}")
 
 
 if __name__ == '__main__':

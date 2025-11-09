@@ -140,37 +140,46 @@ function CharacterGraph({ characters, onNodeClick }) {
   }
 
   return (
-    <div className="relative w-full" style={{ height: dimensions.height }}>
+    <div className="relative w-full bg-gray-50" style={{ height: dimensions.height }}>
       <ForceGraph2D
         ref={graphRef}
         graphData={graphData}
         width={dimensions.width}
         height={dimensions.height}
+        backgroundColor="#f9fafb"
         nodeLabel={node => `
           <div class="bg-white p-2 rounded shadow-lg border border-gray-200">
             <div class="font-bold text-sm">${node.name}</div>
             <div class="text-xs text-gray-600">Mentions: ${node.mentionCount}</div>
-            <div class="text-xs text-gray-500 mt-1 max-w-xs">${node.description}</div>
           </div>
         `}
-        nodeColor={node => node.color}
-        nodeVal={node => node.val}
+        // Hide default node circles - we'll render text only
         nodeCanvasObject={(node, ctx, globalScale) => {
           const label = node.name;
-          const fontSize = 12/globalScale;
-          ctx.font = `${fontSize}px Sans-Serif`;
+          const fontSize = 14 / globalScale;
+          ctx.font = `${fontSize}px Arial, sans-serif`;
+
+          // Measure text width for background
+          const textWidth = ctx.measureText(label).width;
+          const bckgDimensions = [textWidth + 8, fontSize + 4];
+
+          // Draw text (no background circle, just clean text)
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle = '#333';
-          ctx.fillText(label, node.x, node.y + node.val + 10/globalScale);
+
+          // Text color based on mention count - darker for more mentioned
+          const intensity = Math.min(180, 100 + node.mentionCount * 3);
+          ctx.fillStyle = `rgb(${255 - intensity}, ${255 - intensity}, 255)`;
+
+          // Draw text only
+          ctx.fillStyle = '#4F46E5'; // Indigo-600
+          ctx.fillText(label, node.x, node.y);
         }}
-        nodeCanvasObjectMode={() => 'after'}
-        linkLabel={link => link.relationship || 'related'}
-        linkColor={() => 'rgba(100, 100, 100, 0.2)'}
-        linkWidth={link => link.value || 1}
-        linkDirectionalParticles={2}
-        linkDirectionalParticleWidth={2}
-        linkDirectionalParticleSpeed={0.005}
+        nodeCanvasObjectMode={() => 'replace'} // Replace default rendering
+        linkLabel={link => ''}
+        linkColor={() => '#CBD5E1'} // Gray-300 for subtle links
+        linkWidth={1}
+        linkDirectionalParticles={0} // Remove animated particles for cleaner look
         onNodeClick={handleNodeClick}
         onNodeHover={node => {
           document.body.style.cursor = node ? 'pointer' : 'default';
@@ -204,7 +213,7 @@ function CharacterGraph({ characters, onNodeClick }) {
       {/* Instructions */}
       <div className="absolute bottom-4 left-4 bg-white p-2 rounded shadow-sm border border-gray-200">
         <p className="text-xs text-gray-600">
-          💡 <span className="font-medium">Tip:</span> Scroll to zoom, drag to pan, click nodes for details
+          💡 <span className="font-medium">Tip:</span> Click names to see character details
         </p>
       </div>
     </div>

@@ -10,15 +10,15 @@ flask-cors==5.0.0
 langchain==0.3.7
 langchain-community==0.3.7
 langchain-google-genai==2.0.4
-unstructured==0.16.1
+unstructured>=0.16.19  # Python 3.13 compatible
 pypdf==5.1.0
 
 # RAG & Embeddings (Custom)
-faiss-cpu==1.9.0
+faiss-cpu>=1.9.0.post1  # Python 3.13 compatible
 sentence-transformers==3.3.1
 
 # Google APIs
-google-generativeai==0.8.3
+google-generativeai>=0.8.4  # 0.8.3 was yanked
 
 # Database & ORM
 sqlalchemy==2.0.35

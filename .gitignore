@@ -17,6 +17,8 @@ frontend/build/
 .env
 .env.local
 backend/.env
+frontend/.env
+frontend/.env.local
 
 # Data files
 data/uploads/*.pdf
@@ -55,3 +57,11 @@ htmlcov/
 #CLAUDE
 docs/*.md
 CLAUDE.md
+
+#JSON
+*.JSON
+
+# Key files
+/backend/*.json
+/backend/*.md
+/docs/*.json

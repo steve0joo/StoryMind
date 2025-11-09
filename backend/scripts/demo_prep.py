@@ -127,22 +127,28 @@ def demo_prep():
                     db.add(character)
                     db.commit()
 
-                    # TODO: Generate image (requires Vertex AI)
-                    # from services.image_service import ImageGenerator
-                    # generator = ImageGenerator()
-                    # result = generator.generate_character_image(profile)
-                    #
-                    # image = GeneratedImage(
-                    #     character_id=character.id,
-                    #     prompt=result['prompt'],
-                    #     image_url=result['image_url'],
-                    #     generation_time_ms=result['generation_time_ms']
-                    # )
-                    # db.add(image)
-                    # db.commit()
+                    # Generate image with Imagen 3
+                    try:
+                        from services.image_service import ImageGenerator
+                        print(f"        Generating image for {name}...")
+                        generator = ImageGenerator()
+                        result = generator.generate_character_image(profile)
 
-                    # Rate limiting (Gemini: 15 req/min)
-                    time.sleep(4)
+                        image = GeneratedImage(
+                            character_id=character.id,
+                            prompt=result['prompt'],
+                            image_url=result['image_url'],
+                            generation_time_ms=result['generation_time_ms']
+                        )
+                        db.add(image)
+                        db.commit()
+                        print(f"        ✓ Image saved: {result['image_url']}")
+                    except Exception as img_error:
+                        print(f"        ⚠️  Image generation failed: {img_error}")
+                        # Continue without image
+
+                    # Rate limiting (Gemini: 15 req/min, Imagen: slower)
+                    time.sleep(5)
 
                 except Exception as e:
                     print(f"        ⚠️  Error creating profile for {name}: {e}")

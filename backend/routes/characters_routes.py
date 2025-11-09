@@ -190,43 +190,45 @@ def generate_character_image(character_id):
         style = data.get('style', 'photorealistic portrait, detailed, high quality')
         aspect_ratio = data.get('aspect_ratio', '1:1')
 
-        # TODO: Generate image using Imagen 3
-        # from services.image_service import ImageGenerator
-        #
-        # generator = ImageGenerator()
-        # profile = {
-        #     'name': character.name,
-        #     'description': character.canonical_description,
-        #     'seed': character.seed
-        # }
-        # result = generator.generate_character_image(
-        #     character_profile=profile,
-        #     style=style,
-        #     aspect_ratio=aspect_ratio
-        # )
-        #
-        # # Save image to database
-        # image = GeneratedImage(
-        #     character_id=character.id,
-        #     prompt=result['prompt'],
-        #     style=style,
-        #     image_url=result['image_url'],
-        #     generation_time_ms=result['generation_time_ms']
-        # )
-        # db.add(image)
-        # db.commit()
-        #
-        # return jsonify({
-        #     'image': image.to_dict(),
-        #     'message': 'Image generated successfully'
-        # }), 201
+        # Generate image using Imagen 3
+        from services.image_service import ImageGenerator
 
-        # Temporary response until Imagen is set up
-        return jsonify({
-            'error': 'Image generation not yet implemented',
-            'message': 'Install google-cloud-aiplatform and configure Vertex AI',
-            'character': character.to_dict()
-        }), 501  # Not Implemented
+        try:
+            generator = ImageGenerator()
+            profile = {
+                'name': character.name,
+                'description': character.canonical_description,
+                'seed': character.seed
+            }
+            result = generator.generate_character_image(
+                character_profile=profile,
+                style=style,
+                aspect_ratio=aspect_ratio
+            )
+
+            # Save image to database
+            image = GeneratedImage(
+                character_id=character.id,
+                prompt=result['prompt'],
+                style=style,
+                image_url=result['image_url'],
+                generation_time_ms=result['generation_time_ms']
+            )
+            db.add(image)
+            db.commit()
+
+            return jsonify({
+                'image': image.to_dict(),
+                'message': 'Image generated successfully'
+            }), 201
+
+        except Exception as gen_error:
+            # If image generation fails, return error but don't crash
+            return jsonify({
+                'error': 'Image generation failed',
+                'message': str(gen_error),
+                'character': character.to_dict()
+            }), 500
 
     except Exception as e:
         return jsonify({

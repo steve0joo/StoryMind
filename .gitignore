@@ -58,6 +58,9 @@ CLAUDE.md
 test_harry_potter.py
 test_ml_pipeline.py
 backend/verify_permissions.py
+NEXT_STEPS.md
+ML_AI_FINAL_CHECKLIST.md
+ML_AI_COMPLETE.md
 
 # Key files
 /backend/*.json

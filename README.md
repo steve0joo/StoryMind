@@ -334,7 +334,7 @@ ALLOWED_ORIGINS=http://localhost:5173
 
 ## Roadmap
 
-### Hackathon (36 hours) - 95% Complete ✅
+### Hackathon (36 hours)
 
 - [x] Documentation complete
 - [x] Project structure setup

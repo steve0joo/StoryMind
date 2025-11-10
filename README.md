@@ -162,22 +162,84 @@ def generate_seed(character_name):
     return seed
 ```
 
-### Technology Stacks
+### Technology Stack
+
+#### Backend (Python 3.11+)
+
+**Core Framework:**
+- **Flask 3.0.3** - REST API server
+- **Flask-CORS 5.0.0** - Cross-origin resource sharing
+
+**AI/ML Stack:**
+- **Gemini 2.0 Flash** (via `google-generativeai 0.8.3`) - Character extraction & description synthesis
+- **Imagen 3** (via `google-cloud-aiplatform 1.71.1`) - Photorealistic image generation
+- **SentenceTransformer 3.3.1** - Text embeddings (all-MiniLM-L6-v2, 384 dimensions)
+- **FAISS-CPU 1.9.0** - Vector similarity search for RAG
+
+**Document Processing:**
+- **LangChain 0.3.7** - Document loaders (PDF/EPUB)
+- **LangChain-Google-GenAI 2.0.5** - Gemini integration wrapper
+- **PyPDF 5.1.0** - PDF parsing
+- **Pillow 11.0.0** - Image processing (placeholder generation)
+
+**Database & Storage:**
+- **SQLAlchemy 2.0.36** - ORM
+- **SQLite** - Database (production: PostgreSQL ready)
+- **Local File System** - Book uploads & generated images
+
+**Utilities:**
+- **Python-dotenv 1.0.1** - Environment variable management
+- **Requests 2.32.3** - HTTP client
+
+#### Frontend (Node.js 18+)
+
+**Core Framework:**
+- **React 18.3.1** - UI library
+- **Vite 5.4.10** - Build tool (10x faster than CRA)
+
+**UI & Styling:**
+- **Tailwind CSS 3.4.18** - Utility-first CSS framework
+- **PostCSS 8.4.49** - CSS processing
+- **Autoprefixer 10.4.20** - CSS vendor prefixing
+
+**Data Visualization:**
+- **React Force Graph 1.48.1** - Network graph library
+- **React Force Graph 2D 1.25.8** - 2D force-directed graph
+
+**HTTP & Routing:**
+- **Axios 1.7.9** - HTTP client
+- **React Router DOM 7.0.2** - Client-side routing
+- **@tanstack/react-query 5.62.7** - Server state management
+
+**Icons:**
+- **Lucide React 0.468.0** - Icon library
+
+#### Development Tools
 
 **Backend:**
-
-- **Flask 3.0.3** - Lightweight API server
-- **LangChain 0.3.7** - Document loading & text splitting only
-- **Direct FAISS 1.9.0** - Custom RAG implementation for full control
-- **Gemini 2.0 Flash** - Character extraction & description synthesis
-- **Imagen 3** - High-fidelity image generation with seed control
+- **pytest 8.3.4** - Testing framework
+- **Werkzeug 3.1.3** - WSGI utility library
 
 **Frontend:**
+- **ESLint 9.17.0** - JavaScript linter
+- **Vite Plugin React 4.3.4** - React fast refresh
 
-- **Vite 5.4.10** - 10x faster than Create React App
-- **React 18.3.1** - UI framework
-- **Tailwind CSS 3.4.14** - Styling
-- **React Force Graph 1.44.7** - Character relationship visualization
+**DevOps:**
+- **Bash Scripts** - `start.sh`, `stop.sh`, `dev.sh` for automation
+- **Git** - Version control (main, develop branches)
+
+#### Infrastructure
+
+**Current (Hackathon):**
+- Local development server
+- SQLite database
+- Local file storage
+
+**Production Ready:**
+- AWS/GCP deployment
+- PostgreSQL database
+- Cloud storage (S3/GCS)
+- Container orchestration (Docker + Kubernetes)
 
 ## Team Collaboration (3-Person Team)
 

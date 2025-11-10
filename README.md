@@ -4,6 +4,10 @@
 
 StoryMind generates consistent, text-accurate visual representations of characters from books using RAG (Retrieval-Augmented Generation) and Imagen 3 for high-fidelity image generation.
 
+https://docs.google.com/presentation/d/1AwWmyQ650DmGJiahqS23pbINhhCtk2k3CFm4Whxo9Ms/edit?usp=sharing
+
+https://youtu.be/wWJlw-lZ2Vc
+
 ## Project Overview
 
 - **Status:** Production Ready for Hackathon 🚀
